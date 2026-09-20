@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+
+.ipynb_checkpoints/
+
+mlruns/
+.mlflow/
+
+models/*.pkl
+models/*.joblib
+
+data/processed/
+
+.env
+
+.pytest_cache/
