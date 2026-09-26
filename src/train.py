@@ -31,16 +31,7 @@ Y_TEST_PATH = PROCESSED_DIR / "y_test.csv"
 
 
 # --------------------------------------------------
-# 2. MLflow configuration
-# --------------------------------------------------
-
-mlflow.set_tracking_uri("http://127.0.0.1:5000")
-
-mlflow.set_experiment("Customer_Churn_Prediction")
-
-
-# --------------------------------------------------
-# 3. Load processed data
+# 2. Load processed data
 # --------------------------------------------------
 
 X_train = pd.read_csv(X_TRAIN_PATH)
@@ -54,6 +45,13 @@ print("Processed data loaded successfully!")
 print("X_train shape:", X_train.shape)
 print("X_test shape:", X_test.shape)
 
+
+# --------------------------------------------------
+# 3. Define MLflow experiment
+# --------------------------------------------------
+
+mlflow.set_experiment("customer-churn-v3")
+mlflow.set_tracking_uri("http://localhost:5000")
 
 # --------------------------------------------------
 # 4. Define models
@@ -82,27 +80,12 @@ for model_name, model in models.items():
     print(f"Training: {model_name}")
     print("=" * 50)
 
+
     # --------------------------------------------------
-    # Start separate MLflow run
+    # Start MLflow Run
     # --------------------------------------------------
 
     with mlflow.start_run(run_name=model_name):
-
-        # --------------------------------------------------
-        # Log model parameters
-        # --------------------------------------------------
-
-        mlflow.log_param("model_type", model_name)
-
-        if model_name == "Logistic Regression":
-
-            mlflow.log_param("max_iter", 1000)
-            mlflow.log_param("random_state", 42)
-
-        elif model_name == "Decision Tree":
-
-            mlflow.log_param("max_depth", 5)
-            mlflow.log_param("random_state", 42)
 
         # --------------------------------------------------
         # Train model
@@ -112,6 +95,7 @@ for model_name, model in models.items():
 
         print("Model training completed!")
 
+
         # --------------------------------------------------
         # Predictions
         # --------------------------------------------------
@@ -120,11 +104,15 @@ for model_name, model in models.items():
 
         y_pred_proba = model.predict_proba(X_test)[:, 1]
 
+
         # --------------------------------------------------
         # Calculate metrics
         # --------------------------------------------------
 
-        accuracy = accuracy_score(y_test, y_pred)
+        accuracy = accuracy_score(
+            y_test,
+            y_pred
+        )
 
         precision = precision_score(
             y_test,
@@ -149,21 +137,79 @@ for model_name, model in models.items():
             y_pred_proba
         )
 
+
         # --------------------------------------------------
-        # Log metrics to MLflow
+        # MLflow - Log 3Parameters
         # --------------------------------------------------
 
-        mlflow.log_metric("accuracy", accuracy)
-        mlflow.log_metric("precision", precision)
-        mlflow.log_metric("recall", recall)
-        mlflow.log_metric("f1_score", f1)
-        mlflow.log_metric("roc_auc", roc_auc)
+        mlflow.log_param(
+            "model",
+            model_name
+        )
+
+        if model_name == "Logistic Regression":
+
+            mlflow.log_param(
+                "max_iter",
+                1000
+            )
+
+            mlflow.log_param(
+                "random_state",
+                42
+            )
+
+        elif model_name == "Decision Tree":
+
+            mlflow.log_param(
+                "max_depth",
+                5
+            )
+
+            mlflow.log_param(
+                "random_state",
+                42
+            )
+
+
+        # --------------------------------------------------
+        # MLflow - Log Metrics
+        # --------------------------------------------------
+
+        mlflow.log_metric(
+            "accuracy",
+            accuracy
+        )
+
+        mlflow.log_metric(
+            "precision",
+            precision
+        )
+
+        mlflow.log_metric(
+            "recall",
+            recall
+        )
+
+        mlflow.log_metric(
+            "f1_score",
+            f1
+        )
+
+        mlflow.log_metric(
+            "roc_auc",
+            roc_auc
+        )
+
 
         # --------------------------------------------------
         # Save model locally
         # --------------------------------------------------
 
-        MODEL_DIR.mkdir(parents=True, exist_ok=True)
+        MODEL_DIR.mkdir(
+            parents=True,
+            exist_ok=True
+        )
 
         model_filename = (
             "logistic_regression.pkl"
@@ -173,16 +219,22 @@ for model_name, model in models.items():
 
         model_path = MODEL_DIR / model_filename
 
-        joblib.dump(model, model_path)
+        joblib.dump(
+            model,
+            model_path
+        )
+
 
         # --------------------------------------------------
-        # Log model to MLflow
+        # MLflow - Log Model
         # --------------------------------------------------
 
         mlflow.sklearn.log_model(
             model,
-            name="model"
+            name="model",
+            skops_trusted_types=["sklearn.tree._tree.Tree"]
         )
+
 
         # --------------------------------------------------
         # Display results
@@ -190,6 +242,7 @@ for model_name, model in models.items():
 
         print("\nModel Evaluation")
         print("-------------------------")
+
         print(f"Accuracy : {accuracy:.4f}")
         print(f"Precision: {precision:.4f}")
         print(f"Recall   : {recall:.4f}")
@@ -199,10 +252,15 @@ for model_name, model in models.items():
         print("\nLocal model saved:")
         print(model_path)
 
-        print("\nMLflow Run ID:")
-        print(mlflow.active_run().info.run_id)
+        print("\nMLflow run logged successfully!")
 
+
+# --------------------------------------------------
+# 6. Completion message
+# --------------------------------------------------
 
 print("\n" + "=" * 50)
 print("All models trained successfully!")
+print("All MLflow runs logged successfully!")
 print("=" * 50)
+
